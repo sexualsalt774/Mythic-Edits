@@ -54,6 +54,7 @@ end
 AddEventHandler('Pickpocketing:Client:TryPickpocket', function(entity, data)
     local ped = entity.entity
     local entState = Entity(ped).state
+    local netId = NetworkGetNetworkIdFromEntity(ped)
     local weapons = {
         `WEAPON_KNIFE`,
         `WEAPON_PISTOL`,
@@ -82,6 +83,16 @@ AddEventHandler('Pickpocketing:Client:TryPickpocket', function(entity, data)
     }, function(cancelled)
         if not cancelled then
             local skillCheck = SkillCheck()
+            Callbacks:ServerCallback('Pickpocketing:Server:PickPocketed', {netId = netId, success = skillCheck}, function(success)
+                print(success)
+                if success then return end
+                local weaponHash = weapons[math.random(#weapons)]
+                GiveWeaponToPed(ped, weaponHash, 1, false, true)
+                SetPedAsEnemy(ped, true)
+                SetPedCanSwitchWeapon(ped, true)
+                TaskCombatPed(ped, LocalPlayer.state.ped, 0, 16)
+            end)
+
             if skillCheck then
                 Callbacks:ServerCallback('Pickpocketing:Server:PickPocketed', nil, function() end)
             else

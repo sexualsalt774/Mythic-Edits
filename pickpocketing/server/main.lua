@@ -45,7 +45,7 @@ AddEventHandler('Core:Shared:Ready', function()
         RetrieveComponents()
 
         Callbacks:RegisterServerCallback('Pickpocketing:Server:AlertPolice', function(source, data, cb)
-            local char = Fetch:Source(source):GetData('Character')
+            -- local char = Fetch:Source(source):GetData('Character')
             local src = source
             local coords = data.coords
             Robbery:TriggerPDAlert(src, coords, '10-92', _dispatchLabels[math.random(#_dispatchLabels)], {
@@ -57,11 +57,20 @@ AddEventHandler('Core:Shared:Ready', function()
         end)
 
         Callbacks:RegisterServerCallback('Pickpocketing:Server:PickPocketed', function(source, data, cb)
-            local src = source
+            -- local src = source
+            local netId = data.netId
+            local entity = NetworkGetEntityFromNetworkId(netId)
+            if entity and DoesEntityExist(entity) then
+                Entity(entity).state:set('pickPocketed', true, true) -- Set and replicate to clients
+            end
+
             local char = Fetch:Source(source):GetData('Character')
+            local success = data.success
+            if not success then return cb(false) end
             local rewardItem = _rewardItems[math.random(#_rewardItems)]
             local rewardChance = math.random(rewardItem.minAmount, rewardItem.maxAmount)
             Inventory:AddItem(char:GetData('SID'), rewardItem.item, rewardChance, {}, 1)
+            return cb(true)
         end)
     end)
 end)
