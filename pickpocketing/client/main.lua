@@ -20,15 +20,16 @@ AddEventHandler('Core:Shared:Ready', function()
 end)
 
 function SetupPickpocketing()
-    Targeting:AddGlobalPed({
+    local a = Targeting:AddGlobalPed({
         {
             icon = 'hand-point-up',
             text = 'Pickpocket',
             event = 'Pickpocketing:Client:TryPickpocket',
+            data = {},
             isEnabled = function(_, entity)
                 local ped = entity.entity
                 local entState = Entity(ped).state
-                return entState.pickPocketed and not IsPedDeadOrDying(ped, false)
+                return not entState.pickPocketed and not IsPedDeadOrDying(ped, false)
             end,
             minDist = 3.0,
         },
@@ -76,15 +77,11 @@ AddEventHandler('Pickpocketing:Client:TryPickpocket', function(entity, data)
             disableMouse = false,
             disableCombat = true,
         },
-        animation = {
-            animDict = "random@mugging3",
-            anim = "pickup_low",
-        },
+        animation = {},
     }, function(cancelled)
         if not cancelled then
             local skillCheck = SkillCheck()
             Callbacks:ServerCallback('Pickpocketing:Server:PickPocketed', {netId = netId, success = skillCheck}, function(success)
-                print(success)
                 if success then return end
                 local weaponHash = weapons[math.random(#weapons)]
                 GiveWeaponToPed(ped, weaponHash, 1, false, true)
@@ -92,16 +89,6 @@ AddEventHandler('Pickpocketing:Client:TryPickpocket', function(entity, data)
                 SetPedCanSwitchWeapon(ped, true)
                 TaskCombatPed(ped, LocalPlayer.state.ped, 0, 16)
             end)
-
-            if skillCheck then
-                Callbacks:ServerCallback('Pickpocketing:Server:PickPocketed', nil, function() end)
-            else
-                local weaponHash = weapons[math.random(#weapons)]
-                GiveWeaponToPed(ped, weaponHash, 1, false, true)
-                SetPedAsEnemy(ped, true)
-                SetPedCanSwitchWeapon(ped, true)
-                TaskCombatPed(ped, LocalPlayer.state.ped, 0, 16)
-            end
         end
     end)
 end)
